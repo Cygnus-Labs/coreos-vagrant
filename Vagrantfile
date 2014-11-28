@@ -1,6 +1,12 @@
 # -*- mode: ruby -*-
 # # vi: set ft=ruby :
 
+# We are using this
+# http://blog.dzema.name/2014/03/24/provider-dependent-box-in-vagrant.html
+# trick in order to select the correct box name for
+# virtualbox or vmware_fusion in order to avoid having to alter
+# the coreos build scripts.
+
 require 'fileutils'
 
 Vagrant.require_version ">= 1.6.0"
@@ -28,7 +34,26 @@ if File.exist?(CONFIG)
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "coreos_developer_vagrant_vmware_fusion"
+  # Every Vagrant virtual environment requires a box to build off of.
+  # Our developers use different virtual machines to work (which can produce
+  # bugs which are hard to reproduce but let's leave it for now) so we moved
+  # box definition into configuration of specific provider.
+  # When user runs `vagrant up` it will pick up correct box
+  # from provider specific config.
+  #
+  # It is implemented with override object which is documented
+  # here https://docs.vagrantup.com/v2/providers/configuration.html
+  config.vm.provider :vmware_fusion do |wmf, override|
+    override.vm.box = "coreos_developer_vagrant_vmware_fusion"
+  end
+
+  config.vm.provider :virtualbox do |vb, override|
+    override.vm.box = "coreos_developer_virtualbox"
+  end
+  # config.vm.box = "coreos_developer_vagrant_vmware_fusion"
+  # config.vm.box = "coreos_developer_virtualbox"
+
+  # Cygnus: Commented this out to use our own custom images.
   # config.vm.box_version = ">= 308.0.1"
   # config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
   # config.vm.box_url = "file://coreos_developer_vagrant_vmware_fusion.json"
@@ -36,6 +61,8 @@ Vagrant.configure("2") do |config|
   # config.vm.provider :vmware_fusion do |vb, override|
   #   override.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant_vmware_fusion.json" % $update_channel
   # end
+
+  # Cygnus: Use this to set the box name,
 
   config.vm.provider :virtualbox do |v|
     # On VirtualBox, we don't have guest additions or a functional vboxsf
