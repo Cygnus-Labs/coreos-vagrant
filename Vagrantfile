@@ -13,7 +13,8 @@ $num_instances = 1
 $update_channel = "alpha"
 $enable_serial_logging = false
 $vb_gui = false
-$vb_memory = 1024
+# $vb_memory = 1024
+$vb_memory = 2048
 $vb_cpus = 1
 
 # Attempt to apply the deprecated environment variable NUM_INSTANCES to
@@ -27,13 +28,14 @@ if File.exist?(CONFIG)
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "coreos-%s" % $update_channel
-  config.vm.box_version = ">= 308.0.1"
-  config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
+  config.vm.box = "coreos_developer_vagrant_vmware_fusion"
+  # config.vm.box_version = ">= 308.0.1"
+  # config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
+  # config.vm.box_url = "file://coreos_developer_vagrant_vmware_fusion.json"
 
-  config.vm.provider :vmware_fusion do |vb, override|
-    override.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant_vmware_fusion.json" % $update_channel
-  end
+  # config.vm.provider :vmware_fusion do |vb, override|
+  #   override.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant_vmware_fusion.json" % $update_channel
+  # end
 
   config.vm.provider :virtualbox do |v|
     # On VirtualBox, we don't have guest additions or a functional vboxsf
@@ -47,7 +49,7 @@ Vagrant.configure("2") do |config|
     config.vbguest.auto_update = false
   end
 
-  (1..$num_instances).each do |i|
+  (1..($num_instances*2)).step(2).each do |i|
     config.vm.define vm_name = "core-%02d" % i do |config|
       config.vm.hostname = vm_name
 
@@ -77,6 +79,7 @@ Vagrant.configure("2") do |config|
 
       config.vm.provider :vmware_fusion do |vb|
         vb.gui = $vb_gui
+        vb.vmx["memsize"] = $vb_memory
       end
 
       config.vm.provider :virtualbox do |vb|
@@ -85,8 +88,10 @@ Vagrant.configure("2") do |config|
         vb.cpus = $vb_cpus
       end
 
-      ip = "172.17.8.#{i+100}"
-      config.vm.network :private_network, ip: ip
+      ip1 = "172.17.8.#{(i)+100}"
+      ip2 = "172.17.8.#{(i+1)+100}"
+      config.vm.network :private_network, ip: ip1
+      config.vm.network :private_network, ip: ip2
 
       # Uncomment below to enable NFS for sharing the host machine into the coreos-vagrant VM.
       #config.vm.synced_folder ".", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
